@@ -1,3 +1,16 @@
+ http://www.besttechtools.com/articles/article/sql-query-to-delete-duplicate-rows
+ 
+ delete E
+    from  EmpDup E
+    inner join
+    (select *,
+    RANK() OVER ( PARTITION BY empid,name ORDER BY sno DESC )rank
+    From EmpDup )T on E.sno=t.sno
+    where T.Rank>1
+    
+    
+
+
 https://blogs.oracle.com/sql/how-to-find-and-delete-duplicate-rows-with-sql
 
 
