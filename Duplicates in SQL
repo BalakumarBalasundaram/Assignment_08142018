@@ -1,0 +1,83 @@
+https://blogs.oracle.com/sql/how-to-find-and-delete-duplicate-rows-with-sql
+
+
+select title, uk_release_date, count(*)
+  from   films
+  group  by title, uk_release_date 
+  
+  
+   select title, uk_release_date, count(*)
+  from   films
+  group  by title, uk_release_date
+  having count(*) > 1; 
+  
+   select * from films
+  where  (title, uk_release_date) in (
+   select title, uk_release_date
+ from   films
+ group  by title, uk_release_date
+ having count(*) > 1
+  ) 
+  
+     select f.*, 
+         count(*) over (partition by title, uk_release_date) ct
+  from   films f;
+  
+   select f.*
+  from   films f
+  where  count(*) over (partition by title, uk_release_date) > 1;
+  
+   select * 
+  from   (
+    select f.*, 
+    count(*) over (partition by title, uk_release_date) ct
+    from   films f
+  )
+  where  ct > 1 
+  
+   with film_counts as (
+    select f.*, count(*) over (partition by title, uk_release_date) ct
+    from   films f
+  )
+    select *
+    from   film_counts
+    where  ct > 1  
+    
+    
+     delete films f
+  where  insert_date not in (
+    select min(insert_date)
+    from   films s
+    where  f.title = s.title
+    and    f.uk_release_date = s.uk_release_date
+  ) 
+  
+  
+   delete films
+  where  film_id not in (
+    select min(film_id)
+    from   films
+    group  by title, uk_release_date
+  ) 
+  
+   delete films
+  where  rowid in (
+    select row_id from exceptions 
+    where  table_name = 'FILMS' 
+    and    constraint = 'FILM_U' 
+    and    owner = sys_context('userenv', 'current_user')
+  )
+  and    rowid not in (
+    select min(rowid)
+    from   films
+    where  rowid in (
+      select row_id from exceptions 
+      where  table_name = 'FILMS' 
+      and    constraint = 'FILM_U' 
+      and    owner = sys_context('userenv', 'current_user')
+    )
+    group  by title, uk_release_date
+    having count(*) > 1
+  ) 
+  
+  
