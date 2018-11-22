@@ -1,0 +1,16 @@
+ var kieSession: KieSession = null
+ var init: Boolean = false
+  
+ def initKieSesion(ruleFile: String): Unit = {
+    val kieServices: KieServices = KieServices.Factory.get()
+    val kFileSystem: KieFileSystem = kieServices.newKieFileSystem();
+    val resource: Resource = kieServices.getResources.newFileSystemResource(ruleFile)
+    kFileSystem.write("/src/main/resources/rule.drl", ruleFile)
+    val builder: KieBuilder = kieServices.newKieBuilder(kFileSystem).buildAll()
+    val container: KieContainer = kieServices.newKieContainer(builder.getKieModule.getReleaseId)
+    kieSession = container.newKieSession();
+    init = true
+  }
+  
+ kieSession.insert(data)
+ kieSession.fireAllRules()
