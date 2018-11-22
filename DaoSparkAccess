@@ -1,0 +1,57 @@
+Convert RDD to DAO object
+
+rddData.map { row =>
+val cons = Class.forName("SubDaoClass").getDeclaredConstructors();
+cons(0).setAccessible(true);
+val daoData = cons(0).newInstance(null,null).asInstanceof[BaseDaoClass];
+daoData.setValue(row)
+daoData
+}
+
+Then fire rules on RDD of SubDao Object
+
+def applyRulesAlongwithList(data: RDD[GenericBaseDao], lookupFileListDao: Broadcast[LookupFileListDao], rules: String, sc: SparkContext): RDD[GenericBaseDao] = {
+    val bCastObj = sc.broadcast(rules) 
+    val tranData = data.map { x =>
+      if (!RuleEngine.init) {
+        println("DRLFile ---> " + bCastObj.value)
+        RuleEngine.init(bCastObj.value)
+        RuleEngine.kieSession.insert(staticFileListDao.value)
+      }
+      RuleEngine.execute(x)
+      x
+    }
+    tranData
+  }
+}
+
+ var kieSession: KieSession = null
+ var init: Boolean = false
+ var ruleFilter: AgendaFilter = null
+ var globaHash = new HashMap[String, String]()
+ def init(ruleFile: String): Unit = {
+    val kieServices: KieServices = KieServices.Factory.get()
+    val kFileSystem: KieFileSystem = kieServices.newKieFileSystem();
+    val resource: Resource = kieServices.getResources.newFileSystemResource(ruleFile)
+    kFileSystem.write("/src/main/resources/rule.drl", ruleFile)
+    val builder: KieBuilder = kieServices.newKieBuilder(kFileSystem).buildAll()
+    val container: KieContainer = kieServices.newKieContainer(builder.getKieModule.getReleaseId)
+    kieSession = container.newKieSession();
+    init = true
+  }
+
+abstract class BaseDao(var status: Int = 0, var isTrue: Boolean = false, var executeStatus: Int = 1, var globalMap: scala.collection.mutable.Map[String, String] = scala.collection.mutable.Map[String, String]()) extends Serializable {
+  def setValue(); 
+  // ... Other setters and getters declared here
+}
+
+class subBaseDao() extends BaseDao {
+    def setValue(data: String): Unit = {
+        var stringArray = data.split("\",\"")
+    }
+}
+
+
+
+
+
